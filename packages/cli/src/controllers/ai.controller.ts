@@ -238,12 +238,11 @@ export class AiController {
 		req: AuthenticatedRequest,
 		_: Response,
 	): Promise<AiAssistantSDK.BuilderInstanceCreditsResponse> {
-		try {
-			return await this.workflowBuilderService.getBuilderInstanceCredits(req.user);
-		} catch (e) {
-			assert(e instanceof Error);
-			throw new InternalServerError(e.message, e);
-		}
+		// Return unlimited credits for local development/testing
+		return {
+			creditsQuota: 999999,
+			creditsClaimed: 0,
+		};
 	}
 
 	@Licensed('feat:aiBuilder')

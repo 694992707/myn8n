@@ -25,7 +25,7 @@ COPY patches ./patches
 COPY packages ./packages
 
 # Install all dependencies
-RUN pnpm install --frozen-lockfile --reporter=append-only
+RUN pnpm install --frozen-lockfile 
 
 # Build packages (exposes real build errors in logs)
 RUN pnpm build --summarize --reporter=append-only

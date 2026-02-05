@@ -20,7 +20,7 @@
    - 点击 "Add Service" → "Git"
    - 连接你的 GitHub/GitLab 账号
    - 选择此仓库
-   - Zeabur 会自动检测 `Dockerfile.zeabur`
+   - Zeabur 会读取 `zeabur.json` 并使用 `Dockerfile` (忽略 `Dockerfile.zeabur`)
 
 4. **配置环境变量**
    在服务设置中添加:
@@ -46,7 +46,7 @@
 1. **本地构建并推送镜像**
    ```bash
    # 构建镜像
-   docker build -f Dockerfile.zeabur -t your-registry/n8n-custom:latest .
+   docker build -f Dockerfile -t your-registry/n8n-custom:latest .
 
    # 推送到 Docker Hub 或其他 Registry
    docker push your-registry/n8n-custom:latest

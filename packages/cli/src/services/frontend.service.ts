@@ -486,27 +486,18 @@ export class FrontendService {
 			this.settings.missingPackages = this.communityPackagesService.hasMissingPackages;
 		}
 
-		if (isAiAssistantEnabled) {
-			this.settings.aiAssistant.enabled = isAiAssistantEnabled;
-			this.settings.aiAssistant.setup =
-				!!this.globalConfig.aiAssistant.baseUrl || !!process.env.N8N_AI_ANTHROPIC_KEY;
-		}
+		// Force enable AI features for local development/testing
+		this.settings.aiAssistant.enabled = true;
+		this.settings.aiAssistant.setup = true;
 
-		if (isAskAiEnabled) {
-			this.settings.askAi.enabled = isAskAiEnabled;
-		}
+		this.settings.askAi.enabled = true;
 
-		if (isAiCreditsEnabled) {
-			this.settings.aiCredits.enabled = isAiCreditsEnabled;
-			this.settings.aiCredits.credits = this.license.getAiCredits();
-			this.settings.aiCredits.setup = !!this.globalConfig.aiAssistant.baseUrl;
-		}
+		this.settings.aiCredits.enabled = true;
+		this.settings.aiCredits.credits = 999999;
+		this.settings.aiCredits.setup = true;
 
-		if (isAiBuilderEnabled) {
-			this.settings.aiBuilder.enabled = isAiBuilderEnabled;
-			this.settings.aiBuilder.setup =
-				!!this.globalConfig.aiAssistant.baseUrl || !!this.globalConfig.aiBuilder.apiKey;
-		}
+		this.settings.aiBuilder.enabled = true;
+		this.settings.aiBuilder.setup = true;
 
 		this.settings.mfa.enabled = this.globalConfig.mfa.enabled;
 

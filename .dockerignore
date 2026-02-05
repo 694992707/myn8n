@@ -4,6 +4,22 @@
 # Ignore everything first
 *
 
+# === n8n source build (custom Dockerfile) ===
+!turbo.json
+!tsconfig.json
+!.npmrc
+!.github
+!.github/**
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!patches
+!patches/**
+!scripts
+!scripts/**
+!packages
+!packages/**
+
 # === n8n main image (docker/images/n8n/Dockerfile) ===
 !compiled
 !compiled/**

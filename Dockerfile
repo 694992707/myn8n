@@ -25,10 +25,13 @@ COPY patches ./patches
 COPY packages ./packages
 
 # Install all dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --reporter=append-only
 
-# Build only n8n (faster than full build)
-RUN pnpm build:deploy
+# Build packages (exposes real build errors in logs)
+RUN pnpm build --summarize --reporter=append-only
+
+# Create production deploy directory
+RUN NODE_ENV=production DOCKER_BUILD=true pnpm --filter=n8n --prod --legacy deploy --no-optional ./compiled
 
 # Production stage
 FROM node:22-alpine

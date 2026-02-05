@@ -1,6 +1,6 @@
-import { ChatAnthropic } from '@langchain/anthropic';
 import { AIMessage, ToolMessage } from '@langchain/core/messages';
 import type { BaseMessage } from '@langchain/core/messages';
+import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { LangChainTracer } from '@langchain/core/tracers/tracer_langchain';
 import { Logger } from '@n8n/backend-common';
 import { Service } from '@n8n/di';
@@ -62,7 +62,7 @@ export class AiWorkflowBuilderService {
 		baseUrl?: string;
 		authHeaders?: Record<string, string>;
 		apiKey?: string;
-	} = {}): Promise<ChatAnthropic> {
+	} = {}): Promise<BaseChatModel> {
 		return await anthropicClaudeSonnet45({
 			baseUrl,
 			apiKey,
@@ -90,7 +90,7 @@ export class AiWorkflowBuilderService {
 		user: IUser,
 		userMessageId: string,
 	): Promise<{
-		anthropicClaude: ChatAnthropic;
+		anthropicClaude: BaseChatModel;
 		tracingClient?: TracingClient;
 		// eslint-disable-next-line @typescript-eslint/naming-convention
 		authHeaders?: { Authorization: string };

@@ -73,9 +73,11 @@ export class WorkflowBuilderService {
 	}
 
 	private async initializeService(): Promise<AiWorkflowBuilderService> {
-		// Create AiAssistantClient if baseUrl is configured
+		// Skip cloud client creation if local API key is configured
+		const hasLocalKey = !!process.env.N8N_AI_ANTHROPIC_KEY;
 		const baseUrl = this.config.aiAssistant.baseUrl;
-		if (baseUrl) {
+
+		if (baseUrl && !hasLocalKey) {
 			const licenseCert = await this.license.loadCertStr();
 			const consumerId = this.license.getConsumerId();
 

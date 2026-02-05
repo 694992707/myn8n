@@ -1,71 +1,59 @@
 # Build stage
 FROM node:22-alpine AS builder
 
-# Install build dependencies
 RUN apk add --no-cache \
     git \
     python3 \
     make \
     g++
 
-# Install pnpm
 RUN npm install -g pnpm@10.22.0
 
 WORKDIR /app
 
-# Skip git hook installation during install in CI/docker builds
 ENV CI=true
 ENV DOCKER_BUILD=true
 
-# Copy package files first for better caching
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.json .npmrc ./
 COPY .github ./.github
 COPY scripts ./scripts
 COPY patches ./patches
 COPY packages ./packages
 
-# Build and create production deploy directory
 RUN pnpm build:deploy
 
-# Production stage
-FROM node:22-alpine
+# Runtime stage (official n8n base image)
+ARG NODE_VERSION=22.22.0
+ARG N8N_VERSION=snapshot
 
-LABEL "language"="nodejs"
-LABEL "framework"="n8n"
+FROM n8nio/base:${NODE_VERSION}
 
-# Install runtime dependencies
-RUN apk add --no-cache \
-    tini
+ARG N8N_VERSION
+ARG N8N_RELEASE_TYPE=dev
 
-# Create n8n user
-RUN addgroup -S n8n && adduser -S -G n8n n8n
-
-WORKDIR /app/compiled
-
-# Copy built files from builder stage
-COPY --from=builder /app/compiled ./
-
-# Environment variables
 ENV NODE_ENV=production
-ENV N8N_PORT=5678
-ENV N8N_HOST=0.0.0.0
-ENV N8N_USER_FOLDER=/home/node/.n8n
+ENV N8N_RELEASE_TYPE=${N8N_RELEASE_TYPE}
+ENV NODE_ICU_DATA=/usr/local/lib/node_modules/full-icu
+ENV SHELL=/bin/sh
 
-# Expose port
-EXPOSE 5678
+WORKDIR /home/node
 
-# Create data directory
-RUN mkdir -p /home/node/.n8n && chown -R n8n:n8n /home/node
+COPY --from=builder /app/compiled /usr/local/lib/node_modules/n8n
+COPY docker/images/n8n/docker-entrypoint.sh /
 
-# Switch to n8n user
-USER n8n
+RUN cd /usr/local/lib/node_modules/n8n && \
+    npm rebuild sqlite3 && \
+    ln -s /usr/local/lib/node_modules/n8n/bin/n8n /usr/local/bin/n8n && \
+    mkdir -p /home/node/.n8n && \
+    chown -R node:node /home/node && \
+    rm -rf /root/.npm /tmp/*
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD ["node", "-e", "fetch('http://127.0.0.1:' + (process.env.N8N_PORT || 5678) + '/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+EXPOSE 5678/tcp
+USER node
+ENTRYPOINT ["tini", "--", "/docker-entrypoint.sh"]
 
-# Use tini as init system
-ENTRYPOINT ["tini", "--"]
-
-# Start n8n
-CMD ["node", "packages/cli/bin/n8n"]
+LABEL org.opencontainers.image.title="n8n" \
+      org.opencontainers.image.description="Workflow Automation Tool" \
+      org.opencontainers.image.source="https://github.com/n8n-io/n8n" \
+      org.opencontainers.image.url="https://n8n.io" \
+      org.opencontainers.image.version=${N8N_VERSION}

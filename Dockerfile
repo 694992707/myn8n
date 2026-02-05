@@ -1,3 +1,6 @@
+ARG NODE_VERSION=22.22.0
+ARG N8N_VERSION=snapshot
+
 # Build stage
 FROM node:22-alpine AS builder
 
@@ -23,9 +26,6 @@ COPY packages ./packages
 RUN pnpm build:deploy
 
 # Runtime stage (official n8n base image)
-ARG NODE_VERSION=22.22.0
-ARG N8N_VERSION=snapshot
-
 FROM n8nio/base:${NODE_VERSION}
 
 ARG N8N_VERSION

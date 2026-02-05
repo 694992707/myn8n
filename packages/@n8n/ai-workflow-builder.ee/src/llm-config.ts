@@ -14,6 +14,52 @@ export interface LLMProviderConfig {
 	headers?: Record<string, string>;
 }
 
+/**
+ * Custom model factory that uses environment variables for configuration.
+ * Supports both OpenAI and Anthropic compatible APIs.
+ */
+export const customModel = async (config: LLMProviderConfig) => {
+	const provider = process.env.N8N_AI_PROVIDER || 'anthropic';
+	const modelName = process.env.N8N_AI_MODEL_NAME || 'claude-sonnet-4-5-20250929';
+	const baseUrl = process.env.N8N_AI_ASSISTANT_BASE_URL;
+
+	if (provider === 'openai') {
+		const { ChatOpenAI } = await import('@langchain/openai');
+		return new ChatOpenAI({
+			model: modelName,
+			apiKey: config.apiKey,
+			temperature: 0,
+			maxTokens: -1,
+			configuration: {
+				baseURL: baseUrl ? `${baseUrl}/chat/completions`.replace('/chat/completions/chat/completions', '/chat/completions') : config.baseUrl,
+				defaultHeaders: config.headers,
+				fetchOptions: {
+					dispatcher: getProxyAgent(baseUrl ?? config.baseUrl ?? 'https://api.openai.com/v1'),
+				},
+			},
+		});
+	}
+
+	// Default to Anthropic
+	const { ChatAnthropic } = await import('@langchain/anthropic');
+	const model = new ChatAnthropic({
+		model: modelName,
+		apiKey: config.apiKey,
+		temperature: 0,
+		maxTokens: MAX_OUTPUT_TOKENS,
+		anthropicApiUrl: baseUrl ? `${baseUrl}/v1/messages`.replace('/v1/messages/v1/messages', '/v1/messages') : config.baseUrl,
+		clientOptions: {
+			defaultHeaders: config.headers,
+			fetchOptions: {
+				dispatcher: getProxyAgent(baseUrl ?? config.baseUrl),
+			},
+		},
+	});
+
+	delete model.topP;
+	return model;
+};
+
 export const gpt52 = async (config: LLMProviderConfig) => {
 	const { ChatOpenAI } = await import('@langchain/openai');
 	return new ChatOpenAI({
@@ -32,6 +78,11 @@ export const gpt52 = async (config: LLMProviderConfig) => {
 };
 
 export const anthropicClaudeSonnet45 = async (config: LLMProviderConfig) => {
+	// Use custom model if environment variables are configured
+	if (process.env.N8N_AI_ANTHROPIC_KEY && (process.env.N8N_AI_MODEL_NAME || process.env.N8N_AI_ASSISTANT_BASE_URL)) {
+		return customModel(config);
+	}
+
 	const { ChatAnthropic } = await import('@langchain/anthropic');
 	const model = new ChatAnthropic({
 		model: 'claude-sonnet-4-5-20250929',
